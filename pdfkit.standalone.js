@@ -61160,10 +61160,15 @@
                     _base3.lazy = false;
                   }
                   if (this.options.relativeTo) {
-                    this.relativeToGetter = new Function(
-                      "ctx",
-                      "return ctx." + this.options.relativeTo
-                    );
+                    this.relativeToGetter = (function (_this) {
+                      return function (ctx) {
+                        return _this.options.relativeTo
+                          .split(".")
+                          .reduce(function (obj, prop) {
+                            return obj[prop];
+                          }, ctx);
+                      };
+                    })(this);
                   }
                 }
                 Pointer.prototype.decode = function (stream, ctx) {
@@ -61564,15 +61569,29 @@
                   this.type = type;
                   this.versions = versions != null ? versions : {};
                   if (typeof this.type === "string") {
-                    this.versionGetter = new Function(
-                      "parent",
-                      "return parent." + this.type
-                    );
-                    this.versionSetter = new Function(
-                      "parent",
-                      "version",
-                      "return parent." + this.type + " = version"
-                    );
+                    this.versionGetter = (function (_this) {
+                      return function (parent) {
+                        return _this.type
+                          .split(".")
+                          .reduce(function (obj, prop) {
+                            return obj[prop];
+                          }, parent);
+                      };
+                    })(this);
+                    this.versionSetter = (function (_this) {
+                      return function (parent, version) {
+                        var cur, p, props, _i, _len, _ref;
+                        props = _this.type.split(".");
+                        cur = parent;
+                        _ref = props.slice(0, -1);
+                        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                          p = _ref[_i];
+                          cur = cur[p];
+                        }
+                        cur[props[props.length - 1]] = version;
+                        return version;
+                      };
+                    })(this);
                   }
                 }
                 VersionedStruct.prototype.decode = function (
