@@ -61160,10 +61160,13 @@
                     _base3.lazy = false;
                   }
                   if (this.options.relativeTo) {
-                    this.relativeToGetter = new Function(
-                      "ctx",
-                      "return ctx." + this.options.relativeTo
-                    );
+                     var relativeToPath;
+                     relativeToPath = this.options.relativeTo.split(".");
+                     this.relativeToGetter = function (ctx) {
+                       return relativeToPath.reduce(function (obj, prop) {
+                         return obj[prop];
+                       }, ctx);
+                     };
                   }
                 }
                 Pointer.prototype.decode = function (stream, ctx) {
@@ -61564,15 +61567,24 @@
                   this.type = type;
                   this.versions = versions != null ? versions : {};
                   if (typeof this.type === "string") {
-                    this.versionGetter = new Function(
-                      "parent",
-                      "return parent." + this.type
-                    );
-                    this.versionSetter = new Function(
-                      "parent",
-                      "version",
-                      "return parent." + this.type + " = version"
-                    );
+                    var typePath;
+                     typePath = this.type.split(".");
+                     this.versionGetter = function (parent) {
+                       return typePath.reduce(function (obj, prop) {
+                         return obj[prop];
+                       }, parent);
+                     };
+                     this.versionSetter = function (parent, version) {
+                       var cur, p, _i, _len, _ref;
+                       cur = parent;
+                       _ref = typePath.slice(0, -1);
+                       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                         p = _ref[_i];
+                         cur = cur[p];
+                       }
+                       cur[typePath[typePath.length - 1]] = version;
+                       return version;
+                     };
                   }
                 }
                 VersionedStruct.prototype.decode = function (
